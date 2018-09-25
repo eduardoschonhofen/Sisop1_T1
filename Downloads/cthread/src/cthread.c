@@ -13,6 +13,9 @@ int static primeiraInit=1;
 PFILA2 static filaAlta;
 PFILA2 static filaMedia;
 PFILA2 static filaBaixa;
+PFILA2 static bloqueados;
+PFILA2 static executando;
+
 
 /*******************************************************************************
 
@@ -24,8 +27,10 @@ int iniciaFilas()
 int e1=CreateFila2(filaAlta);
 int e2=CreateFila2(filaMedia);
 int e3=CreateFila2(filaBaixa);
+int e5=CreateFila2(bloqueados);
+int e6=createFila2(executando);
 
-if(e1||e2||e3!=0)
+if(e1||e2||e3||e5||6!=0)
 return -1;
 return 0;
 }
@@ -72,10 +77,30 @@ int ccreate (void* (*start)(void*), void *arg, int prio)
   novaThread->context.uc_stack.ss_size=STACKSIZE;
   novaThread->context.uc_stack.ss_sp=stack;
   //PROVAVELMENTE SERÁ MODIFICADO O UC_LINK
-  novaThread->context.uc_stack.uc_link=novaThread.context;
+//  novaThread->context.uc_stack.uc_link=novaThread->context;
 
   //Definimos o novo contexto
   makecontext(&novaThread->context,start,arg);
+
+
+/* Acredito que está errado
+  //Alocamos um nodo para inserir na fila
+  PNODE2* nodo = (PNODE2*)malloc(sizeof(PNODE2));
+
+  //Criamos o nodo da Thread para inserir na fila
+  //nodo->node=&novaThread;
+  */
+
+  //Inserimos na fila de prioridade correta
+  switch(novaThread->prio)
+  {
+  case 0:AppendFila2(filaAlta,&novaThread);
+  break;
+  case 1:AppendFila2(filaMedia,&novaThread);
+  break;
+  case 2:AppendFila2(filaBaixa,&novaThread);
+  break;
+  }
 }
 
 /******************************************************************************
@@ -87,6 +112,8 @@ Retorno:
 ******************************************************************************/
 int cyield(void)
 {
+
+
 
 }
 
