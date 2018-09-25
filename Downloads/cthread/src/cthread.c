@@ -127,8 +127,9 @@ Retorno:
 ******************************************************************************/
 int csetprio(int tid, int prio)
 {
-
-
+  FirstFila2(executando);
+  TCB_t *Thread = (TCB_t*)GetAtIteratorFila2(executando);
+  Thread->prio=prio;
 }
 
 /******************************************************************************
