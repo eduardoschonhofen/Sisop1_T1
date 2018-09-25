@@ -4,6 +4,8 @@
 #include "../include/cdata.h"
 #include <stdio.h>
 
+
+int static tid=0;
 int static primeiraInit=1;
 PFILA2 static filaAlta;
 PFILA2 static filaMedia;
@@ -12,7 +14,7 @@ PFILA2 static filaBaixa;
 /*******************************************************************************
 
 ********************************************************************************/
-void iniciaFilas()
+int iniciaFilas()
 {
 primeiraInit=0;
 
@@ -39,16 +41,18 @@ int ccreate (void* (*start)(void*), void *arg, int prio)
 {
   if(primeiraInit)
   {
-    iniciaFilas();
+    int ok = iniciaFilas();
 
   }
+  if(ok!=0)
+  return -1;
   TCB_t *novaThread = (TCB_t*)malloc(sizeof(TCB_t));
-
-
-
-
-
-
+  novaThread->prio=prio;
+  novaThread->tid=tid;
+  tid++;
+  novaThread->state=PROCST_CRIACAO;
+  getcontext(&novaThread->context);
+  makecontext(&novaThread->context,start,arg);
 }
 
 /******************************************************************************
