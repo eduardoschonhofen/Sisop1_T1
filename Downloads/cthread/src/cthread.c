@@ -4,6 +4,28 @@
 #include "../include/cdata.h"
 #include <stdio.h>
 
+int static primeiraInit=1;
+PFILA2 static filaAlta;
+PFILA2 static filaMedia;
+PFILA2 static filaBaixa;
+
+/*******************************************************************************
+
+********************************************************************************/
+void iniciaFilas()
+{
+primeiraInit=0;
+
+int e1=CreateFila2(filaAlta);
+int e2=CreateFila2(filaMedia);
+int e3=CreateFila2(filaBaixa);
+
+if(e1&&e2&&e3!=0)
+return -1;
+return 0;
+}
+
+
 /******************************************************************************
 Parâmetros:
 	start:	ponteiro para a função que a thread executará.
@@ -15,8 +37,18 @@ Retorno:
 ******************************************************************************/
 int ccreate (void* (*start)(void*), void *arg, int prio)
 {
+  if(primeiraInit)
+  {
+    iniciaFilas();
 
-  
+  }
+  TCB_t *novaThread = (TCB_t*)malloc(sizeof(TCB_t));
+
+
+
+
+
+
 }
 
 /******************************************************************************
