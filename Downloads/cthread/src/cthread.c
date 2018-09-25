@@ -129,7 +129,7 @@ void escalona()
 {
   FirstFila2(executando);
   TCB_t *Thread = (TCB_t*)GetAtIteratorFila2(executando);
-  getcontext(&Thread->context);
+  getcontext(Thread->context);
 
 
   if(FirstFila2(filaAlta) != 0)
@@ -139,16 +139,16 @@ void escalona()
     {
       if(FirstFila2(filaBaixa) !=0)
       {
-          return 0;
+          return -1;
       }
       else
       {
         TCB_t *ThreadNew = (TCB_t*)GetAtIteratorFila2(filaBaixa);
-        AppendFila2(executando,&ThreadNew);
+        AppendFila2(executando,ThreadNew);
         if(DeleteAtIteratorFila2(filaBaixa) == 0)
         {
           NextFila2(filaBaixa);
-          context
+          setcontext(ThreadNew->context);
           return 0;
         }
       }
@@ -156,10 +156,11 @@ void escalona()
     else
     {
       TCB_t *ThreadNew = (TCB_t*)GetAtIteratorFila2(filaMedia);
-      AppendFila2(executando,&ThreadNew);
+      AppendFila2(executando,ThreadNew);
       if(DeleteAtIteratorFila2(filaMedia) == 0)
       {
         NextFila2(filaMedia);
+        setcontext(ThreadNew->context);
         return 0;
       }
     }
@@ -167,10 +168,11 @@ void escalona()
   else
   {
     TCB_t *ThreadNew = (TCB_t*)GetAtIteratorFila2(filaAlta);
-    AppendFila2(executando,&ThreadNew);
+    AppendFila2(executando,ThreadNew);
     if(DeleteAtIteratorFila2(filaAlta) == 0)
     {
       NextFila2(filaAlta);
+      setcontext(ThreadNew->context);
       return 0;
     }
 
