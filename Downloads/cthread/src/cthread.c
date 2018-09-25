@@ -117,6 +117,69 @@ int cyield(void)
 
 }
 
+
+/******************************************************************************
+Parâmetros:
+
+Retorno:
+	Quando executada corretamente: retorna 0 (zero)
+	Caso contrário, retorna um valor negativo.
+******************************************************************************/
+void escalona()
+{
+  FirstFila2(executando);
+  TCB_t *Thread = (TCB_t*)GetAtIteratorFila2(executando);
+  getcontext(&Thread->context);
+
+
+  if(FirstFila2(filaAlta) != 0)
+  {
+
+    if (FirstFila2(filaMedia) != 0)
+    {
+      if(FirstFila2(filaBaixa) !=0)
+      {
+          return 0;
+      }
+      else
+      {
+        TCB_t *ThreadNew = (TCB_t*)GetAtIteratorFila2(filaBaixa);
+        AppendFila2(executando,&ThreadNew);
+        if(DeleteAtIteratorFila2(filaBaixa) == 0)
+        {
+          NextFila2(filaBaixa);
+          context
+          return 0;
+        }
+      }
+    }
+    else
+    {
+      TCB_t *ThreadNew = (TCB_t*)GetAtIteratorFila2(filaMedia);
+      AppendFila2(executando,&ThreadNew);
+      if(DeleteAtIteratorFila2(filaMedia) == 0)
+      {
+        NextFila2(filaMedia);
+        return 0;
+      }
+    }
+  }
+  else
+  {
+    TCB_t *ThreadNew = (TCB_t*)GetAtIteratorFila2(filaAlta);
+    AppendFila2(executando,&ThreadNew);
+    if(DeleteAtIteratorFila2(filaAlta) == 0)
+    {
+      NextFila2(filaAlta);
+      return 0;
+    }
+
+  }
+
+
+
+}
+
 /******************************************************************************
 Parâmetros:
 	tid: identificador da thread cuja prioridade será alterada (deixar sempre esse campo como NULL em 2018/02)
