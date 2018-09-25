@@ -94,11 +94,11 @@ int ccreate (void* (*start)(void*), void *arg, int prio)
   //Inserimos na fila de prioridade correta
   switch(novaThread->prio)
   {
-  case 0:AppendFila2(filaAlta,&novaThread);
+  case 0:AppendFila2(filaAlta,novaThread);
   break;
-  case 1:AppendFila2(filaMedia,&novaThread);
+  case 1:AppendFila2(filaMedia,novaThread);
   break;
-  case 2:AppendFila2(filaBaixa,&novaThread);
+  case 2:AppendFila2(filaBaixa,novaThread);
   break;
   }
 }
@@ -129,7 +129,7 @@ void escalona()
 {
   FirstFila2(executando);
   TCB_t *Thread = (TCB_t*)GetAtIteratorFila2(executando);
-  getcontext(Thread->context);
+  getcontext(&Thread->context);
 
 
   if(FirstFila2(filaAlta) != 0)
@@ -148,7 +148,7 @@ void escalona()
         if(DeleteAtIteratorFila2(filaBaixa) == 0)
         {
           NextFila2(filaBaixa);
-          setcontext(ThreadNew->context);
+          setcontext(&ThreadNew->context);
           return 0;
         }
       }
@@ -160,7 +160,7 @@ void escalona()
       if(DeleteAtIteratorFila2(filaMedia) == 0)
       {
         NextFila2(filaMedia);
-        setcontext(ThreadNew->context);
+        setcontext(&ThreadNew->context);
         return 0;
       }
     }
@@ -172,7 +172,7 @@ void escalona()
     if(DeleteAtIteratorFila2(filaAlta) == 0)
     {
       NextFila2(filaAlta);
-      setcontext(ThreadNew->context);
+      setcontext(&ThreadNew->context);
       return 0;
     }
 
