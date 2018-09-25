@@ -2,8 +2,11 @@
 #include "../include/cthread.h"
 #include "../include/support.h"
 #include "../include/cdata.h"
+
 #include <stdio.h>
 
+
+#define STACKSIZE 8192
 
 int static tid=0;
 int static primeiraInit=1;
@@ -16,13 +19,13 @@ PFILA2 static filaBaixa;
 ********************************************************************************/
 int iniciaFilas()
 {
-primeiraInit=0;
+
 
 int e1=CreateFila2(filaAlta);
 int e2=CreateFila2(filaMedia);
 int e3=CreateFila2(filaBaixa);
 
-if(e1&&e2&&e3!=0)
+if(e1||e2||e3!=0)
 return -1;
 return 0;
 }
@@ -39,19 +42,39 @@ Retorno:
 ******************************************************************************/
 int ccreate (void* (*start)(void*), void *arg, int prio)
 {
+  int ok=0;
   if(primeiraInit)
   {
-    int ok = iniciaFilas();
-
+    ok = iniciaFilas();
+    primeiraInit=0;
   }
   if(ok!=0)
   return -1;
+
+  //Alocamos a thread
   TCB_t *novaThread = (TCB_t*)malloc(sizeof(TCB_t));
+  //Definimos a prioridade e o id da thread
   novaThread->prio=prio;
   novaThread->tid=tid;
   tid++;
+
+  //Definidos o estado inicial da Thread para criação
   novaThread->state=PROCST_CRIACAO;
+
+
+
+
+  //Obtemos o molde do contexto
   getcontext(&novaThread->context);
+
+  //Alocamos uma nova stack para o contexto.
+  char* stack =(char*)malloc(STACKSIZE);
+  novaThread->context.uc_stack.ss_size=STACKSIZE;
+  novaThread->context.uc_stack.ss_sp=stack;
+  //PROVAVELMENTE SERÁ MODIFICADO O UC_LINK
+  novaThread->context.uc_stack.uc_link=novaThread.context;
+
+  //Definimos o novo contexto
   makecontext(&novaThread->context,start,arg);
 }
 
