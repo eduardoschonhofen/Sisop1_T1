@@ -356,8 +356,9 @@ Retorno:
 ******************************************************************************/
 int csem_init(csem_t *sem, int count)
 {
-
-
+	sem = malloc(sizeof(csem_t));
+	sem->count = count;
+	return CreateFila2(sem->fila);
 }
 
 /******************************************************************************
@@ -369,8 +370,32 @@ Retorno:
 ******************************************************************************/
 int cwait(csem_t *sem)
 {
-
-
+	sem->count = sem->count - 1;
+	if(sem->count < 0)
+	{
+		// thread bloqueada, entra na fila do semaforo
+		TCB_t *Thread;
+		getcontext(&Thread->context);
+		Thread->state=PROCST_BLOQ;
+		int endofqueue = 0;
+		// Posiciona a thread na fila por ordem de prioridade e então de idade
+		// Vou dar uma simplificada nessa busca pq tem coisa repetida, mas nao to conseguindo mais
+		if(FirstFila2(sem->fila) == 0)
+		{
+			while(Thread->prio <= (TCB_t *)GetAtIteratorFila2(sem->fila)->prio && endofqueue == 0) 
+			{
+				if(NextFila2(sem->fila) == NXTFILA_ENDQUEUE)
+					endofqueue = 1;
+			}
+			if(endofqueue == 0)
+				InsertBeforeIteratorFila2(sem->fila, Thread);
+			else
+				AppendFila2(sem->fila,Thread);
+		}
+		else
+			AppendFila2(sem->fila,Thread);
+		escalona();
+	}
 }
 
 /******************************************************************************
@@ -382,8 +407,16 @@ Retorno:
 ******************************************************************************/
 int csignal(csem_t *sem)
 {
-
-
+	sem->count = sem->count + 1;
+	if(sem->count >= 0)
+	{
+		// Libera a thread de maior prioridade e idade da fila do semaforo para estado apto
+		FirstFila2(sem->fila);
+		TCB_t *ThreadNew = (TCB_t*)GetAtIteratorFila2(sem->fila);
+		DeleteAtIteratorFila2(sem->fila);
+		ThreadNew->state=PROCST_APTO;
+		escalona();
+	}
 }
 
 /******************************************************************************
