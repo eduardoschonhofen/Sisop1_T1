@@ -23,16 +23,34 @@ PFILA2 static executando;
 int iniciaFilas()
 {
 
-
 int e1=CreateFila2(filaAlta);
 int e2=CreateFila2(filaMedia);
 int e3=CreateFila2(filaBaixa);
 int e5=CreateFila2(bloqueados);
 int e6=createFila2(executando);
 
-if(e1||e2||e3||e5||6!=0)
+if(e1!=0||e2!=0||e3!=0||e5!=0||6!=0)
 return -1;
 return 0;
+}
+
+
+/*******************************************************************************
+
+********************************************************************************/
+saveMain()
+{
+  //Alocamos a thread
+  TCB_t *novaThread = (TCB_t*)malloc(sizeof(TCB_t));
+  //Definimos a prioridade e o id da thread
+  novaThread->prio=2;
+  novaThread->tid=0;
+  novaThread->state=PROCST_CRIACAO;
+  //Obtemos o molde do contexto
+  getcontext(&novaThread->context);
+  novaThread->state=PROCST_APTO;
+  AppendFila2(filaBaixa,novaThread);
+
 }
 
 
@@ -51,10 +69,12 @@ int ccreate (void* (*start)(void*), void *arg, int prio)
   if(primeiraInit)
   {
     ok = iniciaFilas();
+    saveMain();
     primeiraInit=0;
   }
   if(ok!=0)
   return -1;
+
 
   //Alocamos a thread
   TCB_t *novaThread = (TCB_t*)malloc(sizeof(TCB_t));
@@ -81,6 +101,7 @@ int ccreate (void* (*start)(void*), void *arg, int prio)
 
   //Definimos o novo contexto
   makecontext(&novaThread->context,start,arg);
+  novaThread->state=PROCST_APTO;
 
 
 /* Acredito que está errado
@@ -101,6 +122,8 @@ int ccreate (void* (*start)(void*), void *arg, int prio)
   case 2:AppendFila2(filaBaixa,novaThread);
   break;
   }
+
+  escalona();
 }
 
 /******************************************************************************
@@ -131,12 +154,19 @@ void escalona()
   TCB_t *Thread = (TCB_t*)GetAtIteratorFila2(executando);
   getcontext(&Thread->context);
 
+  if(Thread->prio==0)
+    return 0;
+
 
   if(FirstFila2(filaAlta) != 0)
   {
+    if(Thread->prio==1)
+    return 0;
 
     if (FirstFila2(filaMedia) != 0)
     {
+      if(Thread->prio==2)
+      return 0;
       if(FirstFila2(filaBaixa) !=0)
       {
           return -1;
@@ -144,39 +174,52 @@ void escalona()
       else
       {
         TCB_t *ThreadNew = (TCB_t*)GetAtIteratorFila2(filaBaixa);
+        ThreadNew->state=PROCST_EXEC;
         AppendFila2(executando,ThreadNew);
         if(DeleteAtIteratorFila2(filaBaixa) == 0)
         {
           NextFila2(filaBaixa);
           setcontext(&ThreadNew->context);
-          return 0;
+
         }
       }
     }
     else
     {
       TCB_t *ThreadNew = (TCB_t*)GetAtIteratorFila2(filaMedia);
+      ThreadNew->state=PROCST_EXEC;
       AppendFila2(executando,ThreadNew);
       if(DeleteAtIteratorFila2(filaMedia) == 0)
       {
         NextFila2(filaMedia);
         setcontext(&ThreadNew->context);
-        return 0;
+
       }
     }
   }
   else
   {
     TCB_t *ThreadNew = (TCB_t*)GetAtIteratorFila2(filaAlta);
+    ThreadNew->state=PROCST_EXEC;
     AppendFila2(executando,ThreadNew);
     if(DeleteAtIteratorFila2(filaAlta) == 0)
     {
       NextFila2(filaAlta);
       setcontext(&ThreadNew->context);
-      return 0;
+
     }
 
   }
+  Thread->state=PROCST_APTO;
+    switch(Thread->prio)
+    {
+    case 0:AppendFila2(filaAlta,Thread);
+    break;
+    case 1:AppendFila2(filaMedia,Thread);
+    break;
+    case 2:AppendFila2(filaBaixa,Thread);
+    break;
+    }
 
 
 
