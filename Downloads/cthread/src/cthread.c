@@ -26,6 +26,34 @@ PFILA2 static Pbloqueados=&bloqueados;
 TCB_t* Pexecutando=NULL;
 
 
+/******************************************************************************
+Parâmetros:
+
+Retorno:
+	Quando executada corretamente: retorna 0 (zero)
+	Caso contrário, retorna um valor negativo.
+******************************************************************************/
+int scheduler()
+{
+  printf("Estou dentro da scheduler");
+
+  if(Pexecutando==NULL)
+  {
+  printf("Entrei na primeira vez");
+  firstThread();
+  Pexecutando->state=PROCST_EXEC;
+  setcontext(&(Pexecutando->context));
+  return;
+  }
+
+  swapThread();
+  setcontext(&(Pexecutando->context));
+
+
+
+
+}
+
 /*******************************************************************************
 
 ********************************************************************************/
@@ -142,6 +170,7 @@ int ccreate (void* (*start)(void*), void *arg, int prio)
   novaThread->tid=tid;
   tid++;
 
+
   //Definidos o estado inicial da Thread para criação
   novaThread->state=PROCST_CRIACAO;
   //Obtemos o molde do contexto
@@ -162,11 +191,12 @@ int ccreate (void* (*start)(void*), void *arg, int prio)
   printf("Contexto foi salvo na nova Thread \n");
 
   printf("Entrei no switch\n");
+
   //Inserimos na fila de prioridade correta
   int inserido=inserePrioridade(novaThread);
+  printf("Entrei na scheduler\n");
+  scheduler();
 
-  printf("Entrei na escalona\n");
-  escalona();
 
 
 return 0;
@@ -244,7 +274,6 @@ void swapThread()
 void firstThread()
 {
 
-
   TCB_t* thread = buscaFilaAlta();
   if(thread!=NULL)
   {
@@ -265,35 +294,9 @@ void firstThread()
   }
 }
 
-/******************************************************************************
-Parâmetros:
-
-Retorno:
-	Quando executada corretamente: retorna 0 (zero)
-	Caso contrário, retorna um valor negativo.
-******************************************************************************/
-void escalona()
-{
-
-
-  if(Pexecutando==NULL)
-  {
-  printf("Entrei na primeira vez");
-  firstThread();
-  Pexecutando->state=PROCST_EXEC;
-  setcontext(&(Pexecutando->context));
-  }
-
-  swapThread();
-  setcontext(&(Pexecutando->context));
 
 
 
-
-
-
-
-}
 
 /******************************************************************************
 Parâmetros:
@@ -371,7 +374,7 @@ int cwait(csem_t *sem)
 		}
 		else
 			AppendFila2(sem->fila,Thread);
-		escalona();
+		scheduler();
 	}
 }
 
@@ -392,7 +395,7 @@ int csignal(csem_t *sem)
 		TCB_t *ThreadNew = (TCB_t*)GetAtIteratorFila2(sem->fila);
 		DeleteAtIteratorFila2(sem->fila);
 		ThreadNew->state=PROCST_APTO;
-		escalona();
+		scheduler();
 	}
 }
 
