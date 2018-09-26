@@ -215,7 +215,29 @@ void swapThread()
   }
 }
 
+void firstThread()
+{
 
+
+  TCB_t* thread = buscaFilaAlta();
+  if(thread!=NULL)
+  {
+    Pexecutando=thread;
+    return;
+  }
+  thread=buscaFilaMedia();
+  if(thread!=NULL)
+  {
+    Pexecutando=thread;
+    return;
+  }
+  thread=buscaFilaBaixa();
+  if(thread!=NULL)
+  {
+    Pexecutando=thread;
+    return;
+  }
+}
 
 /******************************************************************************
 Parâmetros:
@@ -231,13 +253,10 @@ void escalona()
   if(Pexecutando==NULL)
   {
   printf("Entrei na primeira vez");
-  selectThread();
+  firstThread();
   Pexecutando->state=PROCST_EXEC;
   setcontext(&(Pexecutando->context));
   }
-
-
-
 
   swapThread();
   setcontext(&(Pexecutando->context));
