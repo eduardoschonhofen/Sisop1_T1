@@ -11,7 +11,7 @@ void printa()
 int main()
 {
   printf("Entrei na main\n");
-  ccreate((void*)printa,NULL,0);
+  ccreate((void*)printa,NULL,2);
   printf("Sai da main\n");
 
   return 0;

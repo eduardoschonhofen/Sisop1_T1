@@ -104,7 +104,8 @@ int ccreate (void* (*start)(void*), void *arg, int prio)
   printf("Sai do if(PrimeiraInit)\n");
 
 
-/*
+  printf("Aloquei a nova thread\n");
+
   //Alocamos a thread
   TCB_t *novaThread = (TCB_t*)malloc(sizeof(TCB_t));
   //Definimos a prioridade e o id da thread
@@ -114,6 +115,8 @@ int ccreate (void* (*start)(void*), void *arg, int prio)
 
   //Definidos o estado inicial da Thread para criação
   novaThread->state=PROCST_CRIACAO;
+
+  printf("Thread foi criada com sucesso \n");
 
 
 
@@ -132,28 +135,32 @@ int ccreate (void* (*start)(void*), void *arg, int prio)
   makecontext(&novaThread->context,start,arg);
   novaThread->state=PROCST_APTO;
 
+  printf("Contexto foi salvo na nova Thread \n");
 
-/* Acredito que está errado
+
+ //Acredito que está errado
   //Alocamos um nodo para inserir na fila
-  PNODE2* nodo = (PNODE2*)malloc(sizeof(PNODE2));
+  //PNODE2* nodo = (PNODE2*)malloc(sizeof(PNODE2));
 
   //Criamos o nodo da Thread para inserir na fila
   //nodo->node=&novaThread;
 
-
+  printf("Entrei no switch\n");
   //Inserimos na fila de prioridade correta
   switch(novaThread->prio)
   {
-  case 0:AppendFila2(filaAlta,novaThread);
+  case 0:AppendFila2(PfilaAlta,novaThread);
   break;
-  case 1:AppendFila2(filaMedia,novaThread);
+  case 1:AppendFila2(PfilaMedia,novaThread);
   break;
-  case 2:AppendFila2(filaBaixa,novaThread);
+  case 2:{printf("Entrei no 2\n");
+    AppendFila2(PfilaBaixa,novaThread);
+  printf("Sai do 2\n")}
   break;
   }
-
+  printf("Entrei na escalona");
   escalona();
-  */
+
 return 0;
 }
 
