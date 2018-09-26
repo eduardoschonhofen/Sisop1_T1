@@ -27,7 +27,7 @@ int e1=CreateFila2(filaAlta);
 int e2=CreateFila2(filaMedia);
 int e3=CreateFila2(filaBaixa);
 int e5=CreateFila2(bloqueados);
-int e6=createFila2(executando);
+int e6=CreateFila2(executando);
 
 if(e1!=0||e2!=0||e3!=0||e5!=0||6!=0)
 return -1;
