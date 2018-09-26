@@ -5,6 +5,7 @@
 
 #include <ucontext.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 
 #define STACKSIZE 8192
@@ -26,6 +27,10 @@ PFILA2 static Pbloqueados=&bloqueados;
 TCB_t* Pexecutando=NULL;
 
 
+void firstThread();
+void swapThread();
+int inserePrioridade();
+
 /******************************************************************************
 Parâmetros:
 
@@ -33,7 +38,7 @@ Retorno:
 	Quando executada corretamente: retorna 0 (zero)
 	Caso contrário, retorna um valor negativo.
 ******************************************************************************/
-int scheduler()
+void scheduler()
 {
   printf("Estou dentro da scheduler");
 
@@ -48,9 +53,6 @@ int scheduler()
 
   swapThread();
   setcontext(&(Pexecutando->context));
-
-
-
 
 }
 
@@ -78,7 +80,7 @@ TCB_t tMain;
 /*******************************************************************************
 
 ********************************************************************************/
-saveMain()
+void saveMain()
 {
   printf("Entrei na savemain \n");
   //Alocamos a thread
@@ -194,7 +196,9 @@ int ccreate (void* (*start)(void*), void *arg, int prio)
 
   //Inserimos na fila de prioridade correta
   int inserido=inserePrioridade(novaThread);
-  printf("Entrei na scheduler\n");
+  printf("Inseri na prioridade");
+
+
   scheduler();
 
 
@@ -204,6 +208,7 @@ return 0;
 
 int inserePrioridade(TCB_t* novaThread)
 {
+  printf("AA");
   int resultado;
   novaThread->state=PROCST_APTO;
   switch(novaThread->prio)
@@ -216,7 +221,6 @@ int inserePrioridade(TCB_t* novaThread)
   break;
   }
   return resultado;
-
 
 }
 
@@ -308,9 +312,7 @@ Retorno:
 ******************************************************************************/
 int csetprio(int tid, int prio)
 {
-  FirstFila2(&executando);
-  TCB_t *Thread = (TCB_t*)GetAtIteratorFila2(&executando);
-  Thread->prio=prio;
+  Pexecutando->prio=prio;
 }
 
 /******************************************************************************
