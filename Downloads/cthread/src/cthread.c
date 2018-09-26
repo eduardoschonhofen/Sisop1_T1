@@ -22,15 +22,22 @@ PFILA2 static executando;
 ********************************************************************************/
 int iniciaFilas()
 {
+  printf("Entrei na IniciaFilas \n");
 
 int e1=CreateFila2(filaAlta);
+printf("Criei fila alta \n");
+/*
+
 int e2=CreateFila2(filaMedia);
 int e3=CreateFila2(filaBaixa);
 int e5=CreateFila2(bloqueados);
 int e6=CreateFila2(executando);
+*/
 
-if(e1!=0||e2!=0||e3!=0||e5!=0||6!=0)
-return -1;
+//if(e1!=0||e2!=0||e3!=0||e5!=0||e6!=0)
+//return -1;
+
+  printf("Sai da IniciaFilas \n");
 return 0;
 }
 
@@ -65,17 +72,23 @@ Retorno:
 ******************************************************************************/
 int ccreate (void* (*start)(void*), void *arg, int prio)
 {
+
+  printf("Entrei na cccreate\n");
+
   int ok=0;
   if(primeiraInit)
   {
     ok = iniciaFilas();
-    saveMain();
+  //  saveMain();
     primeiraInit=0;
   }
   if(ok!=0)
   return -1;
 
+  printf("Sai do if(PrimeiraInit)\n");
 
+
+/*
   //Alocamos a thread
   TCB_t *novaThread = (TCB_t*)malloc(sizeof(TCB_t));
   //Definimos a prioridade e o id da thread
@@ -110,7 +123,7 @@ int ccreate (void* (*start)(void*), void *arg, int prio)
 
   //Criamos o nodo da Thread para inserir na fila
   //nodo->node=&novaThread;
-  */
+
 
   //Inserimos na fila de prioridade correta
   switch(novaThread->prio)
@@ -124,6 +137,8 @@ int ccreate (void* (*start)(void*), void *arg, int prio)
   }
 
   escalona();
+  */
+return 0;
 }
 
 /******************************************************************************

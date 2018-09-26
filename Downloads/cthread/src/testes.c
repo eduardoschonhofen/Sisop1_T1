@@ -10,7 +10,9 @@ void printa()
 
 int main()
 {
+  printf("Entrei na main\n");
   ccreate((void*)printa,NULL,0);
+  printf("Sai da main\n");
 
   return 0;
 }
