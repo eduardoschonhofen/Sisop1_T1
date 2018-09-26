@@ -6,6 +6,7 @@
 #include <ucontext.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 
 #define STACKSIZE 8192
@@ -25,6 +26,9 @@ PFILA2 static PfilaMedia=&filaMedia;
 PFILA2 static PfilaBaixa=&filaBaixa;
 PFILA2 static Pbloqueados=&bloqueados;
 TCB_t* Pexecutando=NULL;
+
+ucontext_t Tscheduler;
+char scherdulerStack[STACKSIZE];
 
 
 void firstThread();
@@ -135,7 +139,14 @@ TCB_t* buscaFilaBaixa()
     return retornaBaixa;
   }
 }
-
+void saveScheduler()
+{
+  getcontext(&Tscheduler);
+  Tscheduler.uc_link=0;
+  Tscheduler.uc_stack.ss_sp=scherdulerStack;
+  Tscheduler.uc_stack.ss_size=STACKSIZE;
+  makecontext(&Tscheduler,(void(*)(void))scheduler,0);
+}
 /******************************************************************************
 Parâmetros:
 	start:	ponteiro para a função que a thread executará.
@@ -147,12 +158,13 @@ Retorno:
 ******************************************************************************/
 int ccreate (void* (*start)(void*), void *arg, int prio)
 {
-  printf("Entrei na cccreate\n");
+  printf("Entrei na cccreate %d\n",&scheduler);
   int ok=0;
   if(primeiraInit)
   {
     ok = iniciaFilas();
     saveMain();
+    saveScheduler();
     primeiraInit=0;
   }
   if(ok!=0)
@@ -164,6 +176,7 @@ int ccreate (void* (*start)(void*), void *arg, int prio)
   TCB_t *novaThread = (TCB_t*)malloc(sizeof(TCB_t));
   //Definimos a prioridade e o id da thread
   novaThread->prio=prio;
+
   novaThread->tid=tid;
   tid++;
   //Definidos o estado inicial da Thread para criação
@@ -176,16 +189,25 @@ int ccreate (void* (*start)(void*), void *arg, int prio)
   novaThread->context.uc_stack.ss_size=STACKSIZE;
   novaThread->context.uc_stack.ss_sp=stack;
   //PROVAVELMENTE SERÁ MODIFICADO O UC_LINK
-  novaThread->context.uc_link=&(novaThread->context);
+  //novaThread->context.uc_link=&(novaThread->context);
+  novaThread->context.uc_link=&Tscheduler;
   //Definimos o novo contexto
   makecontext(&(novaThread->context),(void(*)(void))start,1,arg);
   novaThread->state=PROCST_APTO;
   printf("Contexto foi salvo na nova Thread\n");
-  printf("Antes da inserir\n");
+  printf("%d",tMain.tid);
+  printf("AAA");
+  inserePrioridade(novaThread);
+  printf("Inseri na prioridade\n");
   //Inserimos na fila de prioridade correta
-  int inserido=inserePrioridade(novaThread);
-  printf("Inseri na prioridade");
-  scheduler();
+  printf("%d",tMain.tid);
+  printf("AAA\n");
+//  setcontext(&(tMain.context));
+scheduler();
+
+
+
+
 return 0;
 
 
