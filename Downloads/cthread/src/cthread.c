@@ -155,10 +155,10 @@ int ccreate (void* (*start)(void*), void *arg, int prio)
   break;
   case 2:{printf("Entrei no 2\n");
     AppendFila2(PfilaBaixa,novaThread);
-  printf("Sai do 2\n")}
+  printf("Sai do 2\n");}
   break;
   }
-  printf("Entrei na escalona");
+  printf("Entrei na escalona\n");
   escalona();
 
 return 0;
@@ -188,13 +188,67 @@ Retorno:
 ******************************************************************************/
 void escalona()
 {
-  FirstFila2(&executando);
+  int* e1 = FirstFila2(&executando);
+  printf("Estou na escalona %d",e1);
+  if(FirstFila2(&executando)!=0)
+  {
+    if(FirstFila2(&filaAlta) != 0)
+    {
+
+
+      if (FirstFila2(&filaMedia) != 0)
+      {
+        if(FirstFila2(&filaBaixa) !=0)
+        {
+            return -1;
+        }
+        else
+        {
+          TCB_t *ThreadNew = (TCB_t*)GetAtIteratorFila2(&filaBaixa);
+          ThreadNew->state=PROCST_EXEC;
+          AppendFila2(&executando,ThreadNew);
+          if(DeleteAtIteratorFila2(&filaBaixa) == 0)
+          {
+            NextFila2(&filaBaixa);
+            setcontext(&ThreadNew->context);
+
+          }
+        }
+      }
+      else
+      {
+        TCB_t *ThreadNew = (TCB_t*)GetAtIteratorFila2(&filaMedia);
+        ThreadNew->state=PROCST_EXEC;
+        AppendFila2(&executando,ThreadNew);
+        if(DeleteAtIteratorFila2(&filaMedia) == 0)
+        {
+          NextFila2(&filaMedia);
+          setcontext(&ThreadNew->context);
+
+        }
+      }
+    }
+    else
+    {
+      TCB_t *ThreadNew = (TCB_t*)GetAtIteratorFila2(&filaAlta);
+      ThreadNew->state=PROCST_EXEC;
+      AppendFila2(&executando,ThreadNew);
+      if(DeleteAtIteratorFila2(&filaAlta) == 0)
+      {
+        NextFila2(&filaAlta);
+        setcontext(&ThreadNew->context);
+
+      }
+
+    }
+  }
   TCB_t *Thread = (TCB_t*)GetAtIteratorFila2(&executando);
   getcontext(&Thread->context);
 
   if(Thread->prio==0)
     return 0;
 
+  printf("Prioridade:%d",Thread->prio);
 
   if(FirstFila2(&filaAlta) != 0)
   {
@@ -211,6 +265,7 @@ void escalona()
       }
       else
       {
+
         TCB_t *ThreadNew = (TCB_t*)GetAtIteratorFila2(&filaBaixa);
         ThreadNew->state=PROCST_EXEC;
         AppendFila2(&executando,ThreadNew);
@@ -248,6 +303,8 @@ void escalona()
     }
 
   }
+
+
   Thread->state=PROCST_APTO;
     switch(Thread->prio)
     {
@@ -258,8 +315,6 @@ void escalona()
     case 2:AppendFila2(&filaBaixa,Thread);
     break;
     }
-
-
 
 }
 
