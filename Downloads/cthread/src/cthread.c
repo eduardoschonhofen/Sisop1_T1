@@ -65,6 +65,47 @@ saveMain()
 
 }
 
+TCB_t* buscaFilaAlta()
+{
+  FirstFila2(PfilaAlta);
+  TCB_t* retornaAlta = (TCB_t*)GetAtIteratorFila2(PfilaAlta);
+  if(retornaAlta == NULL){
+    return NULL;
+  }
+  else
+  {
+  DeleteAtIteratorFila2(PfilaAlta);
+   return retornaAlta;
+ }
+}
+
+TCB_t* buscaFilaMedia()
+{
+  FirstFila2(PfilaMedia);
+  TCB_t* retornaMedia = (TCB_t*)GetAtIteratorFila2(PfilaMedia);
+  if(retornaMedia == NULL){
+    return NULL;
+  }
+  else
+  {
+    DeleteAtIteratorFila2(PfilaMedia);
+    return retornaMedia;
+  }
+}
+TCB_t* buscaFilaBaixa()
+{
+  FirstFila2(PfilaBaixa);
+  TCB_t* retornaBaixa = (TCB_t*)GetAtIteratorFila2(PfilaBaixa);
+  if(retornaBaixa == NULL){
+    return NULL;
+  }
+  else
+  {
+    DeleteAtIteratorFila2(PfilaBaixa);
+    return retornaBaixa;
+  }
+}
+
 /******************************************************************************
 Parâmetros:
 	start:	ponteiro para a função que a thread executará.
@@ -165,21 +206,6 @@ int cyield(void)
 
 }
 
-TCB_t* buscaFilaAlta()
-{
-
-
-}
-TCB_t* buscaFilaMedia()
-{
-
-
-}
-TCB_t* buscaFilaBaixa()
-{
-
-
-}
 
 void swapThread()
 {
