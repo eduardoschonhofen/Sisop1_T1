@@ -181,30 +181,6 @@ int cyield(void)
 
 }
 
-void firstThreadStart()
-{
-  TCB_t* thread = buscaFilaAlta();
-  if(thread!=NULL)
-  {
-
-    return;
-  }
-  thread=buscaFilaMedia();
-  if(thread!=NULL)
-  {
-
-    return;
-  }
-  thread=buscaFilaBaixa();
-  if(thread!=NULL)
-  {
-
-    return;
-  }
-}
-
-
-
 TCB_t* buscaFilaAlta()
 {
 
@@ -221,6 +197,36 @@ TCB_t* buscaFilaBaixa()
 
 }
 
+void swapThread()
+{
+  if(Pexecutando->prio==0)
+  return;
+  TCB_t* thread = buscaFilaAlta();
+  if(thread!=NULL)
+  {
+    Pexecutando=thread;
+    return;
+  }
+  if(Pexecutando->prio==1)
+  return;
+  thread=buscaFilaMedia();
+  if(thread!=NULL)
+  {
+    Pexecutando=thread;
+    return;
+  }
+  if(Pexecutando->prio==2)
+  return;
+  thread=buscaFilaBaixa();
+  if(thread!=NULL)
+  {
+    Pexecutando=thread;
+    return;
+  }
+}
+
+
+
 /******************************************************************************
 Parâmetros:
 
@@ -234,65 +240,19 @@ void escalona()
 
   if(Pexecutando==NULL)
   {
-  firstThreadStart();
+  printf("Entrei na primeira vez");
+  selectThread();
+  Pexecutando->state=PROCST_EXEC;
+  setcontext(&(Pexecutando->context));
   }
 
 
-  printf("Estou na escalona");
-  if(FirstFila2(&executando)!=0)
-  {
-    if(FirstFila2(&filaAlta) != 0)
-    {
+
+  getcontext(&(Pexecutando->context));
+  swapThread();
 
 
-      if (FirstFila2(&filaMedia) != 0)
-      {
-        if(FirstFila2(&filaBaixa) !=0)
-        {
-            return -1;
-        }
-        else
-        {
-          TCB_t *ThreadNew = (TCB_t*)GetAtIteratorFila2(&filaBaixa);
-          ThreadNew->state=PROCST_EXEC;
-          AppendFila2(&executando,ThreadNew);
-          if(DeleteAtIteratorFila2(&filaBaixa) == 0)
-          {
-            NextFila2(&filaBaixa);
-            setcontext(&ThreadNew->context);
 
-          }
-        }
-      }
-      else
-      {
-        TCB_t *ThreadNew = (TCB_t*)GetAtIteratorFila2(&filaMedia);
-        ThreadNew->state=PROCST_EXEC;
-        AppendFila2(&executando,ThreadNew);
-        if(DeleteAtIteratorFila2(&filaMedia) == 0)
-        {
-          NextFila2(&filaMedia);
-          setcontext(&ThreadNew->context);
-
-        }
-      }
-    }
-    else
-    {
-      TCB_t *ThreadNew = (TCB_t*)GetAtIteratorFila2(&filaAlta);
-      ThreadNew->state=PROCST_EXEC;
-      AppendFila2(&executando,ThreadNew);
-      if(DeleteAtIteratorFila2(&filaAlta) == 0)
-      {
-        NextFila2(&filaAlta);
-        setcontext(&ThreadNew->context);
-
-      }
-
-    }
-  }
-  TCB_t *Thread = (TCB_t*)GetAtIteratorFila2(&executando);
-  getcontext(&Thread->context);
 
   if(Thread->prio==0)
     return 0;
