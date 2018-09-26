@@ -71,7 +71,6 @@ saveMain()
   TCB_t *ThreadNew = (TCB_t*)GetAtIteratorFila2(&filaBaixa);
 
   printf("Valor da main: %d = %d --- %d = %d --- %d = %d\n ",novaThread->prio,ThreadNew->prio,novaThread->tid,ThreadNew->tid,novaThread->state,ThreadNew->state);
-
   printf("Sai da savemain \n");
 
 }
@@ -188,8 +187,8 @@ Retorno:
 ******************************************************************************/
 void escalona()
 {
-  int* e1 = FirstFila2(&executando);
-  printf("Estou na escalona %d",e1);
+  FirstFila2(&executando);
+  printf("Estou na escalona");
   if(FirstFila2(&executando)!=0)
   {
     if(FirstFila2(&filaAlta) != 0)
@@ -382,7 +381,7 @@ int cwait(csem_t *sem)
 		// Vou dar uma simplificada nessa busca pq tem coisa repetida, mas nao to conseguindo mais
 		if(FirstFila2(sem->fila) == 0)
 		{
-			while(Thread->prio <= (TCB_t *)GetAtIteratorFila2(sem->fila)->prio && endofqueue == 0) 
+			//while(Thread->prio <= (TCB_t *)GetAtIteratorFila2(sem->fila)->prio && endofqueue == 0)
 			{
 				if(NextFila2(sem->fila) == NXTFILA_ENDQUEUE)
 					endofqueue = 1;
