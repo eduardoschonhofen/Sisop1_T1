@@ -78,7 +78,6 @@ int ccreate (void* (*start)(void*), void *arg, int prio)
 {
 
   printf("Entrei na cccreate\n");
-
   int ok=0;
   if(primeiraInit)
   {
@@ -104,12 +103,6 @@ int ccreate (void* (*start)(void*), void *arg, int prio)
 
   //Definidos o estado inicial da Thread para criação
   novaThread->state=PROCST_CRIACAO;
-
-
-
-
-
-
   //Obtemos o molde do contexto
   getcontext(&(novaThread->context));
   printf("Thread criada\n");
@@ -127,14 +120,6 @@ int ccreate (void* (*start)(void*), void *arg, int prio)
 
   printf("Contexto foi salvo na nova Thread \n");
 
-
- //Acredito que está errado
-  //Alocamos um nodo para inserir na fila
-  //PNODE2* nodo = (PNODE2*)malloc(sizeof(PNODE2));
-
-  //Criamos o nodo da Thread para inserir na fila
-  //nodo->node=&novaThread;
-
   printf("Entrei no switch\n");
   //Inserimos na fila de prioridade correta
   int inserido=inserePrioridade(novaThread);
@@ -143,14 +128,13 @@ int ccreate (void* (*start)(void*), void *arg, int prio)
   escalona();
 
 
-
 return 0;
 }
 
 int inserePrioridade(TCB_t* novaThread)
 {
   int resultado;
-
+  novaThread->state=PROCST_APTO;
   switch(novaThread->prio)
   {
   case 0:resultado=AppendFila2(PfilaAlta,novaThread);
@@ -199,11 +183,15 @@ TCB_t* buscaFilaBaixa()
 
 void swapThread()
 {
+
+  getcontext(&(Pexecutando->context));
   if(Pexecutando->prio==0)
   return;
+
   TCB_t* thread = buscaFilaAlta();
   if(thread!=NULL)
   {
+    inserePrioridade(Pexecutando);
     Pexecutando=thread;
     return;
   }
@@ -212,6 +200,7 @@ void swapThread()
   thread=buscaFilaMedia();
   if(thread!=NULL)
   {
+    inserePrioridade(Pexecutando);
     Pexecutando=thread;
     return;
   }
@@ -220,6 +209,7 @@ void swapThread()
   thread=buscaFilaBaixa();
   if(thread!=NULL)
   {
+    inserePrioridade(Pexecutando);
     Pexecutando=thread;
     return;
   }
@@ -248,74 +238,15 @@ void escalona()
 
 
 
-  getcontext(&(Pexecutando->context));
+
   swapThread();
+  setcontext(&(Pexecutando->context));
 
 
 
 
-  if(Thread->prio==0)
-    return 0;
-
-  printf("Prioridade:%d",Thread->prio);
-
-  if(FirstFila2(&filaAlta) != 0)
-  {
-    if(Thread->prio==1)
-    return 0;
-
-    if (FirstFila2(&filaMedia) != 0)
-    {
-      if(Thread->prio==2)
-      return 0;
-      if(FirstFila2(&filaBaixa) !=0)
-      {
-          return -1;
-      }
-      else
-      {
-
-        TCB_t *ThreadNew = (TCB_t*)GetAtIteratorFila2(&filaBaixa);
-        ThreadNew->state=PROCST_EXEC;
-        AppendFila2(&executando,ThreadNew);
-        if(DeleteAtIteratorFila2(&filaBaixa) == 0)
-        {
-          NextFila2(&filaBaixa);
-          setcontext(&ThreadNew->context);
-
-        }
-      }
-    }
-    else
-    {
-      TCB_t *ThreadNew = (TCB_t*)GetAtIteratorFila2(&filaMedia);
-      ThreadNew->state=PROCST_EXEC;
-      AppendFila2(&executando,ThreadNew);
-      if(DeleteAtIteratorFila2(&filaMedia) == 0)
-      {
-        NextFila2(&filaMedia);
-        setcontext(&ThreadNew->context);
-
-      }
-    }
-  }
-  else
-  {
-    TCB_t *ThreadNew = (TCB_t*)GetAtIteratorFila2(&filaAlta);
-    ThreadNew->state=PROCST_EXEC;
-    AppendFila2(&executando,ThreadNew);
-    if(DeleteAtIteratorFila2(&filaAlta) == 0)
-    {
-      NextFila2(&filaAlta);
-      setcontext(&ThreadNew->context);
-
-    }
-
-  }
 
 
-  Thread->state=PROCST_APTO;
-    inserePrioridade(Thread);
 
 }
 
