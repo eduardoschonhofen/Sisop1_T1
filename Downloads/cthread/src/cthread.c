@@ -13,11 +13,11 @@
 int static tid=0;
 int static primeiraInit=1;
 
-FILA2  filaAlta;
-FILA2  filaMedia;
-FILA2  filaBaixa;
-FILA2  bloqueados;
-TCB_t  executando;
+FILA2 static filaAlta;
+FILA2 static  filaMedia;
+FILA2 static  filaBaixa;
+FILA2 static  bloqueados;
+TCB_t static  executando;
 
 
 PFILA2 static PfilaAlta=&filaAlta;
@@ -147,7 +147,6 @@ Retorno:
 ******************************************************************************/
 int ccreate (void* (*start)(void*), void *arg, int prio)
 {
-
   printf("Entrei na cccreate\n");
   int ok=0;
   if(primeiraInit)
@@ -160,50 +159,37 @@ int ccreate (void* (*start)(void*), void *arg, int prio)
   return -1;
 
   printf("Sai do if(PrimeiraInit)\n");
-
-
   printf("Aloquei a nova thread\n");
-
   //Alocamos a thread
   TCB_t *novaThread = (TCB_t*)malloc(sizeof(TCB_t));
-
   //Definimos a prioridade e o id da thread
   novaThread->prio=prio;
   novaThread->tid=tid;
   tid++;
-
-
   //Definidos o estado inicial da Thread para criação
   novaThread->state=PROCST_CRIACAO;
   //Obtemos o molde do contexto
   getcontext(&(novaThread->context));
   printf("Thread criada\n");
-
   //Alocamos uma nova stack para o contexto.
   char* stack =(char*)malloc(STACKSIZE);
   novaThread->context.uc_stack.ss_size=STACKSIZE;
   novaThread->context.uc_stack.ss_sp=stack;
   //PROVAVELMENTE SERÁ MODIFICADO O UC_LINK
   novaThread->context.uc_link=&(novaThread->context);
-
   //Definimos o novo contexto
   makecontext(&(novaThread->context),(void(*)(void))start,1,arg);
   novaThread->state=PROCST_APTO;
-
-  printf("Contexto foi salvo na nova Thread \n");
-
-  printf("Entrei no switch\n");
-
+  printf("Contexto foi salvo na nova Thread\n");
+  printf("Antes da inserir\n");
   //Inserimos na fila de prioridade correta
   int inserido=inserePrioridade(novaThread);
   printf("Inseri na prioridade");
-
-
   scheduler();
-
-
-
 return 0;
+
+
+
 }
 
 int inserePrioridade(TCB_t* novaThread)
