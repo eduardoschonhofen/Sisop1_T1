@@ -27,6 +27,18 @@ PFILA2 static PfilaBaixa=&filaBaixa;
 PFILA2 static Pbloqueados=&bloqueados;
 TCB_t* Pexecutando=NULL;
 
+// Estruturas e variaveis da cjoin
+TCB_t *ThreadAtual; // Papel parecido com a Pexecutando, mas preciso do NULL pra diferenciar preempcao de termino de execucao
+struct s_BloqJoin {
+	int tidBloqueadora;
+	TCB_t *ThreadBloqueada;
+};
+typedef struct s_BloqJoin	BloqCJoin;
+typedef struct s_BloqJoin *	PBloqCJoin;
+FILA2 joined;
+PFILA2 static Pjoined=&joined;
+// Final das estruturas e variaveis da cjoin
+
 ucontext_t Tscheduler;
 char scherdulerStack[STACKSIZE];
 
@@ -34,6 +46,10 @@ char scherdulerStack[STACKSIZE];
 void firstThread();
 void swapThread();
 int inserePrioridade();
+
+int tidBloqueando(int tid); // Testa se o tid esta bloqueando alguma thread
+int tidNaFila(int tid, PFILA2 fila); // Testa se o tid em questao esta na fila passada
+int desbloqueiaThread(int tid); // Desbloqueio de threads, para uso no escalonador
 
 /******************************************************************************
 Parâmetros:
@@ -54,8 +70,13 @@ void scheduler()
   setcontext(&(Pexecutando->context));
   return;
   }
-
+  
+  if(ThreadAtual != NULL) // Entra apenas se a execucao de uma thread foi finalizada
+  {
+	desbloqueiaThread(ThreadAtual->tid);
+  {
   swapThread();
+  ThreadAtual = Pexecutando;
   setcontext(&(Pexecutando->context));
 
 }
@@ -243,9 +264,11 @@ Retorno:
 ******************************************************************************/
 int cyield(void)
 {
-
-
-
+	inserePrioridade(Pexecutando);
+	ThreadAtual = NULL; // utilizado para informar ao escalonador que essa thread ainda nao terminou o processamento
+	// acho que o swap eh necessario para que fique salvo o contexto desse exato momento, para quando a thread voltar a ser executada
+	swapcontext(&Pexecutando->context, &Tscheduler);
+	return 0;
 }
 
 
@@ -332,8 +355,28 @@ Retorno:
 ******************************************************************************/
 int cjoin(int tid)
 {
-
-
+	if(tidBloqueando(tid) == 0) // teste se o tid informado ja esta bloqueando alguem
+	{
+		return -1;
+	}
+	// Testa se a thread do tid informado ainda exite
+	if(tidNaFila(tid, PfilaAlta) != 0 && tidNaFila(tid, PfilaMedia) != 0 && tidNaFila(tid, PfilaBaixa) != 0 && tidNaFila(tid, Pbloqueados) != 0)
+	{
+		return -1;
+	}
+	
+	PBloqCJoin novoBloqueio = (PBloqCJoin)malloc(sizeof(BloqCJoin));
+	novoBloqueio->tidBloqueadora = tid;
+	novoBloqueio->ThreadBloqueada = ThreadAtual;
+	novoBloqueio->ThreadBloqueada->state = PROCST_BLOQ;
+	
+	AppendFila2(&bloqueados,novoBloqueio->ThreadBloqueada); // colocando nas filas de bloqueio e na especifica de joined
+	AppendFila2(Pjoined,novoBloqueio);						// necessaria para podermos verificar por qual tid a thread espera
+	
+	ThreadAtual = NULL; // utilizado para informar ao escalonador que essa thread ainda nao terminou o processamento
+	
+	swapcontext(&novoBloqueio->ThreadBloqueada->context, &Tscheduler); // TROCAR POR scheduler(); ?
+	return 0;
 }
 
 /******************************************************************************
@@ -369,13 +412,15 @@ int cwait(csem_t *sem)
 		Thread->state=PROCST_BLOQ;
 		int endofqueue = 0;
 		// Posiciona a thread na fila por ordem de prioridade e então de idade
-		// Vou dar uma simplificada nessa busca pq tem coisa repetida, mas nao to conseguindo mais
 		if(FirstFila2(sem->fila) == 0)
 		{
-			//while(Thread->prio <= (TCB_t *)GetAtIteratorFila2(sem->fila)->prio && endofqueue == 0)
+			TCB_t *ThreadTemp = (TCB_t *)GetAtIteratorFila2(sem->fila); // EM CASO DE PROBLEMA, COMENTE ISSO FORA. era pra funcionar.
+			while(Thread->prio <= ThreadTemp->prio && endofqueue == 0)
 			{
 				if(NextFila2(sem->fila) == NXTFILA_ENDQUEUE)
 					endofqueue = 1;
+				else
+					ThreadTemp = (TCB_t *)GetAtIteratorFila2(sem->fila);
 			}
 			if(endofqueue == 0)
 				InsertBeforeIteratorFila2(sem->fila, Thread);
@@ -384,7 +429,8 @@ int cwait(csem_t *sem)
 		}
 		else
 			AppendFila2(sem->fila,Thread);
-		scheduler();
+		ThreadAtual = NULL; // utilizado para informar ao escalonador que essa thread ainda nao terminou o processamento
+		scheduler(); //MUDAR PARA SWAPCONTEXT()?
 	}
 }
 
@@ -405,7 +451,8 @@ int csignal(csem_t *sem)
 		TCB_t *ThreadNew = (TCB_t*)GetAtIteratorFila2(sem->fila);
 		DeleteAtIteratorFila2(sem->fila);
 		ThreadNew->state=PROCST_APTO;
-		scheduler();
+		ThreadAtual = NULL; // utilizado para informar ao escalonador que essa thread ainda nao terminou o processamento
+		scheduler();//MUDAR PARA SWAPCONTEXT()?
 	}
 }
 
@@ -422,4 +469,79 @@ int cidentify (char *name, int size)
 {
 
 
+}
+
+//Verifica se alguma thread espera pelo final da thread com o tid fornecido
+// Retorna 0 se exite alguma, -1 se não exite;
+int tidBloqueando(int tid)
+{
+	if(FirstFila2(Pjoined) == 0)
+	{
+		do
+		{
+			PBloqCJoin Temp = (PBloqCJoin)GetAtIteratorFila2(Pjoined);
+			if(Temp->tidBloqueadora == tid)
+				return 0;
+		}while(NextFila2(Pjoined) == 0);
+	}
+	return -1;
+}
+
+
+//Verifica se a thread com o tid fornecido exite na fila
+// Retorna 0 se exite alguma, -1 se não exite;
+int tidNaFila(int tid, PFILA2 fila)
+{
+	if(FirstFila2(fila) == 0)
+	{
+		do
+		{
+			TCB_t * Temp = (TCB_t *)GetAtIteratorFila2(fila);
+			if(Temp->tid == tid)
+				return 0;
+		}while(NextFila2(fila) == 0);
+	}
+	return -1;
+}
+
+
+// Função de desbloqueio de thread
+// Quando uma thread termina, essa funcao recebe o tid dela
+// Ela entao busca se tem alguma thread sendo bloqueada por esse tid
+// caso sim, desbloqueia e retorna 0
+// caso nao, segue o baile e retorna -1
+int desbloqueiaThread(int tid)
+{
+	TCB_t * threadDesbloq = NULL;
+	if(FirstFila2(Pjoined) == 0) // garante que a fila de joined nao e vazia
+	{
+		int exitsearch = 0;
+		do // Varre a fila de joineds
+		{
+			PBloqCJoin bloqueio = (PBloqCJoin)GetAtIteratorFila2(Pjoined);
+			if(bloqueio->tid == tid)
+			{
+				threadDesbloq = bloqueio->ThreadBloqueada;
+				DeleteAtIteratorFila2(Pjoined);
+				exitsearch = 1;
+			}
+		}while(NextFila2(Pjoined) == 0 && exitsearch == 0);
+		if (threadDesbloq != NULL) // testa se foi encontrada alguma thread bloqueada pelo tid recebido
+		{
+			int exitsearch2 = 0;
+			do
+			{
+				TCB_t* threadNavegacao = (TCB_t*)GetAtIteratorFila2(Pbloqueados);
+				if(threadNavegacao->tid == threadDesbloq->tid)
+				{
+					DeleteAtIteratorFila2(Pbloqueados); // Retira da fila de bloqueados, pois a thread voltara para os aptos
+					exitsearch2 = 1;
+				}
+			}while(NextFila2(Pbloqueados) == 0 && exitsearch2 == 0);
+			
+			inserePrioridade(threadDesbloq);
+			return 0;
+		}
+	}
+	return -1;
 }
