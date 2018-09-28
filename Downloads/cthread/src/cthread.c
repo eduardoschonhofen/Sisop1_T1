@@ -54,37 +54,12 @@ int tidBloqueando(int tid); // Testa se o tid esta bloqueando alguma thread
 int tidNaFila(int tid, PFILA2 fila); // Testa se o tid em questao esta na fila passada
 int desbloqueiaThread(int tid); // Desbloqueio de threads, para uso no escalonador
 
-void removeFilaAlta()
-{
 
-}
-void removeFilaMedia()
-{
-
-}
-void removeFilaBaixa()
-{
-
-}
-
-void removeDaFila()
-{
-	switch(Pexecutando->prio)
-	{
-		case 0:removeFilaAlta();
-		case 1:removeFilaMedia();
-		case 2:removeFilaBaixa();
-	}
-
-
-
-}
 
 void RIPthread()
 {
 	printf("Thread %d is going to die!\n",Pexecutando->tid);
-	removeDaFila();
-	free(Pexecutando);
+//	free(Pexecutando);
 	Pexecutando=NULL;
 }
 void StartRIPthread()
@@ -111,17 +86,17 @@ void scheduler()
   printf("Entrei na primeira vez\n");
   firstThread();
   Pexecutando->state=PROCST_EXEC;
+	ThreadAtual=Pexecutando;
   setcontext(&(Pexecutando->context));
   return;
   }
-
 
   if(ThreadAtual != NULL) // Entra apenas se a execucao de uma thread foi finalizada
   {
 	desbloqueiaThread(ThreadAtual->tid);
 	printf("Entrei apos thread finalizar\n");
   swapThread();
-
+	printf("Batata:%d\n",Pexecutando);
   setcontext(&(Pexecutando->context));
 	}
 	ThreadAtual = Pexecutando;
@@ -329,6 +304,7 @@ int cyield(void)
 void swapThread()
 {
 	printf("estou swapando\n");
+	printf("%d",Pexecutando);
 	if(Pexecutando==NULL)
 	{
 		printf("OMG,a Thread morreu!\n");
@@ -373,8 +349,8 @@ void swapThread()
 
 void firstThread()
 {
-
   TCB_t* thread = buscaFilaAlta();
+
   if(thread!=NULL)
   {
     Pexecutando=thread;
@@ -392,6 +368,8 @@ void firstThread()
     Pexecutando=thread;
     return;
   }
+
+	printf("Achei porra nenhuma\n");
 }
 
 
