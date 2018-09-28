@@ -11,7 +11,7 @@
 
 #define STACKSIZE 8192
 
-int static tid=0;
+int static tid=1;
 int static primeiraInit=1;
 
 FILA2 static filaAlta;
@@ -40,7 +40,10 @@ PFILA2 static Pjoined=&joined;
 // Final das estruturas e variaveis da cjoin
 
 ucontext_t Tscheduler;
+ucontext_t ThreadReaper;
+TCB_t tMain;
 char scherdulerStack[STACKSIZE];
+char ripStack[STACKSIZE];
 
 
 void firstThread();
@@ -51,6 +54,23 @@ int tidBloqueando(int tid); // Testa se o tid esta bloqueando alguma thread
 int tidNaFila(int tid, PFILA2 fila); // Testa se o tid em questao esta na fila passada
 int desbloqueiaThread(int tid); // Desbloqueio de threads, para uso no escalonador
 
+
+
+void RIPthread()
+{
+	printf("Thread %d is going to die!\n",Pexecutando->tid);
+
+	free(Pexecutando);
+	Pexecutando=NULL;
+}
+void StartRIPthread()
+{
+	getcontext(&ThreadReaper);
+	ThreadReaper.uc_link=&Tscheduler;
+	ThreadReaper.uc_stack.ss_sp=ripStack;
+	ThreadReaper.uc_stack.ss_size=STACKSIZE;
+	makecontext(&ThreadReaper,(void(*)(void))RIPthread,0);
+}
 /******************************************************************************
 Parâmetros:
 
@@ -60,27 +80,32 @@ Retorno:
 ******************************************************************************/
 void scheduler()
 {
-  printf("Estou dentro da scheduler");
+  printf("Estou dentro da scheduler\n");
 
-  if(Pexecutando==NULL)
+  if(Pexecutando==&tMain)
   {
-  printf("Entrei na primeira vez");
+  printf("Entrei na primeira vez\n");
   firstThread();
   Pexecutando->state=PROCST_EXEC;
   setcontext(&(Pexecutando->context));
   return;
   }
 
+
   if(ThreadAtual != NULL) // Entra apenas se a execucao de uma thread foi finalizada
   {
 	desbloqueiaThread(ThreadAtual->tid);
-  {
+	printf("Entrei apos thread finalizar\n");
   swapThread();
   ThreadAtual = Pexecutando;
   setcontext(&(Pexecutando->context));
+	return;
 
 	}
-	}
+	printf("estoy aqui\n");
+	swapThread();
+	setcontext(&(Pexecutando->context));
+
 }
 /******************************************************************************
 
@@ -105,7 +130,7 @@ return -1;
 return 0;
 }
 
-TCB_t tMain;
+
 
 /*******************************************************************************
 
@@ -191,6 +216,8 @@ int ccreate (void* (*start)(void*), void *arg, int prio)
     ok = iniciaFilas();
     saveMain();
     saveScheduler();
+		StartRIPthread();
+		Pexecutando=&tMain;
     primeiraInit=0;
   }
   if(ok!=0)
@@ -201,10 +228,7 @@ int ccreate (void* (*start)(void*), void *arg, int prio)
   //Alocamos a thread
   TCB_t *novaThread = (TCB_t*)malloc(sizeof(TCB_t));
   //Definimos a prioridade e o id da thread
-  novaThread->prio=prio;
 
-  novaThread->tid=tid;
-  tid++;
   //Definidos o estado inicial da Thread para criação
   novaThread->state=PROCST_CRIACAO;
   //Obtemos o molde do contexto
@@ -214,9 +238,13 @@ int ccreate (void* (*start)(void*), void *arg, int prio)
   char* stack =(char*)malloc(STACKSIZE);
   novaThread->context.uc_stack.ss_size=STACKSIZE;
   novaThread->context.uc_stack.ss_sp=stack;
+	novaThread->prio=prio;
+
+	novaThread->tid=tid;
+	tid++;
   //PROVAVELMENTE SERÁ MODIFICADO O UC_LINK
   //novaThread->context.uc_link=&(novaThread->context);
-  novaThread->context.uc_link=&Tscheduler;
+  novaThread->context.uc_link=&ThreadReaper;
   //Definimos o novo contexto
   makecontext(&(novaThread->context),(void(*)(void))start,1,arg);
   novaThread->state=PROCST_APTO;
@@ -229,20 +257,17 @@ int ccreate (void* (*start)(void*), void *arg, int prio)
   printf("%d",tMain.tid);
   printf("AAA\n");
 //  setcontext(&(tMain.context));
-scheduler();
+
+swapcontext(&Pexecutando->context, &Tscheduler);
 
 
 
 
 return 0;
-
-
-
 }
 
 int inserePrioridade(TCB_t* novaThread)
 {
-  printf("AA");
   int resultado;
   novaThread->state=PROCST_APTO;
   switch(novaThread->prio)
@@ -279,6 +304,14 @@ int cyield(void)
 
 void swapThread()
 {
+	printf("estou swapando\n");
+	if(Pexecutando==NULL)
+	{
+		printf("OMG,a Thread morreu!\n");
+		firstThread();
+		return;
+	}
+
 
   getcontext(&(Pexecutando->context));
   if(Pexecutando->prio==0)
@@ -289,6 +322,7 @@ void swapThread()
   {
     inserePrioridade(Pexecutando);
     Pexecutando=thread;
+		printf("estou swapando por prioridade alta\n");
     return;
   }
   if(Pexecutando->prio==1)
@@ -297,6 +331,7 @@ void swapThread()
   if(thread!=NULL)
   {
     inserePrioridade(Pexecutando);
+		printf("estou swapando por prioridade media\n");
     Pexecutando=thread;
     return;
   }
@@ -306,6 +341,7 @@ void swapThread()
   if(thread!=NULL)
   {
     inserePrioridade(Pexecutando);
+		printf("estou swapando por prioridade baixa\n");
     Pexecutando=thread;
     return;
   }
