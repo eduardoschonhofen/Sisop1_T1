@@ -70,7 +70,7 @@ void scheduler()
   setcontext(&(Pexecutando->context));
   return;
   }
-  
+
   if(ThreadAtual != NULL) // Entra apenas se a execucao de uma thread foi finalizada
   {
 	desbloqueiaThread(ThreadAtual->tid);
@@ -79,9 +79,14 @@ void scheduler()
   ThreadAtual = Pexecutando;
   setcontext(&(Pexecutando->context));
 
+	}
+	}
 }
+/******************************************************************************
 
-/*******************************************************************************
+********************************************************************************/
+
+/******************************************************************************
 
 ********************************************************************************/
 int iniciaFilas()
@@ -364,17 +369,17 @@ int cjoin(int tid)
 	{
 		return -1;
 	}
-	
+
 	PBloqCJoin novoBloqueio = (PBloqCJoin)malloc(sizeof(BloqCJoin));
 	novoBloqueio->tidBloqueadora = tid;
 	novoBloqueio->ThreadBloqueada = ThreadAtual;
 	novoBloqueio->ThreadBloqueada->state = PROCST_BLOQ;
-	
+
 	AppendFila2(&bloqueados,novoBloqueio->ThreadBloqueada); // colocando nas filas de bloqueio e na especifica de joined
 	AppendFila2(Pjoined,novoBloqueio);						// necessaria para podermos verificar por qual tid a thread espera
-	
+
 	ThreadAtual = NULL; // utilizado para informar ao escalonador que essa thread ainda nao terminou o processamento
-	
+
 	swapcontext(&novoBloqueio->ThreadBloqueada->context, &Tscheduler); // TROCAR POR scheduler(); ?
 	return 0;
 }
@@ -519,7 +524,7 @@ int desbloqueiaThread(int tid)
 		do // Varre a fila de joineds
 		{
 			PBloqCJoin bloqueio = (PBloqCJoin)GetAtIteratorFila2(Pjoined);
-			if(bloqueio->tid == tid)
+			if(bloqueio->tidBloqueadora == tid)
 			{
 				threadDesbloq = bloqueio->ThreadBloqueada;
 				DeleteAtIteratorFila2(Pjoined);
@@ -538,7 +543,7 @@ int desbloqueiaThread(int tid)
 					exitsearch2 = 1;
 				}
 			}while(NextFila2(Pbloqueados) == 0 && exitsearch2 == 0);
-			
+
 			inserePrioridade(threadDesbloq);
 			return 0;
 		}
