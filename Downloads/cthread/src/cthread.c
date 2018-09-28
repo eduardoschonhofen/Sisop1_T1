@@ -58,8 +58,8 @@ int desbloqueiaThread(int tid); // Desbloqueio de threads, para uso no escalonad
 
 void RIPthread()
 {
-	printf("Thread %d is going to die!\n",Pexecutando->tid);
-//	free(Pexecutando);
+	//printf("Thread %d is going to die!\n",Pexecutando->tid);
+	free(Pexecutando);
 	Pexecutando=NULL;
 }
 void StartRIPthread()
@@ -79,14 +79,16 @@ Retorno:
 ******************************************************************************/
 void scheduler()
 {
-  printf("Estou dentro da scheduler\n");
+//  printf("Estou dentro da scheduler\n");
 
   if(Pexecutando==&tMain)
   {
-  printf("Entrei na primeira vez\n");
-  firstThread();
+//  printf("Entrei na primeira vez\n");
+//  firstThread();
+swapThread();
   Pexecutando->state=PROCST_EXEC;
 	ThreadAtual=Pexecutando;
+//	printf("Primeiro contexto:%d",Pexecutando);
   setcontext(&(Pexecutando->context));
   return;
   }
@@ -94,13 +96,16 @@ void scheduler()
   if(ThreadAtual != NULL) // Entra apenas se a execucao de uma thread foi finalizada
   {
 	desbloqueiaThread(ThreadAtual->tid);
-	printf("Entrei apos thread finalizar\n");
-	printf("Batata:%d\n",Pexecutando);
+//	printf("Entrei apos thread finalizar\n");
+	//printf("Batata:%d\n",&(Pexecutando->context));
   }
-	printf("estoy aqui\n");
+//	printf("estoy aqui\n");
+//	printf("Batata:%d\n",&(Pexecutando->context));
 	swapThread();
 	ThreadAtual = Pexecutando;
-	printf("%d\n",Pexecutando->tid);
+//	printf("%d\n",&(Pexecutando->context));
+	Pexecutando->state=PROCST_EXEC;
+//	printf("Vou setar pra cyield\n");
 	setcontext(&(Pexecutando->context));
 
 }
@@ -123,7 +128,7 @@ int e5=CreateFila2(&bloqueados);
 if(e1!=0||e2!=0||e3!=0||e5!=0)
 return -1;
 
-  printf("Sai da IniciaFilas e: %d %d %d %d \n",e1,e2,e3,e5);
+//  printf("Sai da IniciaFilas e: %d %d %d %d \n",e1,e2,e3,e5);
 return 0;
 }
 
@@ -134,7 +139,7 @@ return 0;
 ********************************************************************************/
 void saveMain()
 {
-  printf("Entrei na savemain \n");
+  //printf("Entrei na savemain \n");
   //Alocamos a thread
   //Definimos a prioridade e o id da thread
   tMain.prio=2;
@@ -143,7 +148,7 @@ void saveMain()
   //Obtemos o molde do contexto
   getcontext(&(tMain.context));
   tMain.state=PROCST_APTO;
-  printf("Sai da savemain \n");
+//  printf("Sai da savemain \n");
 
 }
 
@@ -206,7 +211,7 @@ Retorno:
 ******************************************************************************/
 int ccreate (void* (*start)(void*), void *arg, int prio)
 {
-  printf("Entrei na cccreate %d\n",&scheduler);
+//  printf("Entrei na cccreate %d\n",&scheduler);
   int ok=0;
   if(primeiraInit)
   {
@@ -220,8 +225,8 @@ int ccreate (void* (*start)(void*), void *arg, int prio)
   if(ok!=0)
   return -1;
 
-  printf("Sai do if(PrimeiraInit)\n");
-  printf("Aloquei a nova thread\n");
+//  printf("Sai do if(PrimeiraInit)\n");
+//  printf("Aloquei a nova thread\n");
   //Alocamos a thread
   TCB_t *novaThread = (TCB_t*)malloc(sizeof(TCB_t));
   //Definimos a prioridade e o id da thread
@@ -230,7 +235,7 @@ int ccreate (void* (*start)(void*), void *arg, int prio)
   novaThread->state=PROCST_CRIACAO;
   //Obtemos o molde do contexto
   getcontext(&(novaThread->context));
-  printf("Thread criada\n");
+//  printf("Thread criada\n");
   //Alocamos uma nova stack para o contexto.
   char* stack =(char*)malloc(STACKSIZE);
   novaThread->context.uc_stack.ss_size=STACKSIZE;
@@ -245,14 +250,14 @@ int ccreate (void* (*start)(void*), void *arg, int prio)
   //Definimos o novo contexto
   makecontext(&(novaThread->context),(void(*)(void))start,1,arg);
   novaThread->state=PROCST_APTO;
-  printf("Contexto foi salvo na nova Thread\n");
-  printf("%d",tMain.tid);
-  printf("AAA");
+  //printf("Contexto foi salvo na nova Thread\n");
+//  printf("%d",tMain.tid);
+//  printf("AAA");
   inserePrioridade(novaThread);
-  printf("Inseri na prioridade\n");
+//  printf("Inseri na prioridade\n");
   //Inserimos na fila de prioridade correta
-  printf("%d",tMain.tid);
-  printf("AAA\n");
+//  printf("%d",tMain.tid);
+//  printf("AAA\n");
 //  setcontext(&(tMain.context));
 
 swapcontext(&Pexecutando->context, &Tscheduler);
@@ -281,7 +286,7 @@ int inserePrioridade(TCB_t* novaThread)
 }
 
 
-
+int yield=0;
 /******************************************************************************
 Parâmetros:
 	Sem parâmetros
@@ -291,55 +296,73 @@ Retorno:
 ******************************************************************************/
 int cyield(void)
 {
-	inserePrioridade(Pexecutando);
+//	printf("Entrei no cyield");
+	//inserePrioridade(Pexecutando);
 	ThreadAtual = NULL; // utilizado para informar ao escalonador que essa thread ainda nao terminou o processamento
 	// acho que o swap eh necessario para que fique salvo o contexto desse exato momento, para quando a thread voltar a ser executada
-	swapcontext(&Pexecutando->context, &Tscheduler);
+//	printf("Pexecutando antes do cyield:%d",Pexecutando);
+	yield=1;
+	swapcontext(&(Pexecutando->context), &Tscheduler);
+//	printf("Voltei pra cyield\n");
 	return 0;
 }
 
 
 void swapThread()
 {
-	printf("estou swapando\n");
-	printf("%d",Pexecutando);
+//	printf("estou swapando\n");
+//	printf("%d",Pexecutando);
 	if(Pexecutando==NULL)
 	{
-		printf("OMG,a Thread morreu!\n");
+	//	printf("OMG,a Thread morreu!\n");
 		firstThread();
 		return;
 	}
 
 
-  getcontext(&(Pexecutando->context));
-  if(Pexecutando->prio==0)
-  return;
+//  getcontext(&(Pexecutando->context));
+//	printf("Pegou contexto\n");
+
+  if(Pexecutando->prio==0 && !yield)
+	{
+		yield=0;
+		return;
+	}
+
+//	printf("Verificou prioridade alta\n");
 
   TCB_t* thread = buscaFilaAlta();
   if(thread!=NULL)
   {
     inserePrioridade(Pexecutando);
     Pexecutando=thread;
-		printf("estou swapando por prioridade alta\n");
+	//	printf("estou swapando por prioridade alta\n");
     return;
   }
-  if(Pexecutando->prio==1)
-  return;
+  if(Pexecutando->prio==1 && !yield)
+	{
+		yield=0;
+		return;
+	}
   thread=buscaFilaMedia();
   if(thread!=NULL)
   {
     inserePrioridade(Pexecutando);
-		printf("estou swapando por prioridade media\n");
+	//	printf("estou swapando por prioridade media\n");
     Pexecutando=thread;
     return;
   }
-  if(Pexecutando->prio==2)
-  return;
+  if(Pexecutando->prio==2 && !yield)
+	{
+
+		yield=0;
+		return;
+	}
   thread=buscaFilaBaixa();
   if(thread!=NULL)
   {
     inserePrioridade(Pexecutando);
-		printf("estou swapando por prioridade baixa\n");
+	//	printf("estou swapando por prioridade baixa\n");
     Pexecutando=thread;
     return;
   }
@@ -367,7 +390,7 @@ void firstThread()
     return;
   }
 
-	printf("Achei porra nenhuma\n");
+	Pexecutando=&tMain;
 }
 
 
@@ -385,6 +408,8 @@ Retorno:
 int csetprio(int tid, int prio)
 {
   Pexecutando->prio=prio;
+	swapcontext(&Pexecutando->context, &Tscheduler);
+
 }
 
 /******************************************************************************
