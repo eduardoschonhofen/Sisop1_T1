@@ -54,12 +54,36 @@ int tidBloqueando(int tid); // Testa se o tid esta bloqueando alguma thread
 int tidNaFila(int tid, PFILA2 fila); // Testa se o tid em questao esta na fila passada
 int desbloqueiaThread(int tid); // Desbloqueio de threads, para uso no escalonador
 
+void removeFilaAlta()
+{
 
+}
+void removeFilaMedia()
+{
+
+}
+void removeFilaBaixa()
+{
+
+}
+
+void removeDaFila()
+{
+	switch(Pexecutando->prio)
+	{
+		case 0:removeFilaAlta();
+		case 1:removeFilaMedia();
+		case 2:removeFilaBaixa();
+	}
+
+
+
+}
 
 void RIPthread()
 {
 	printf("Thread %d is going to die!\n",Pexecutando->tid);
-
+	removeDaFila();
 	free(Pexecutando);
 	Pexecutando=NULL;
 }
@@ -97,13 +121,13 @@ void scheduler()
 	desbloqueiaThread(ThreadAtual->tid);
 	printf("Entrei apos thread finalizar\n");
   swapThread();
-  ThreadAtual = Pexecutando;
-  setcontext(&(Pexecutando->context));
-	return;
 
+  setcontext(&(Pexecutando->context));
 	}
+	ThreadAtual = Pexecutando;
 	printf("estoy aqui\n");
 	swapThread();
+	printf("%d\n",Pexecutando->tid);
 	setcontext(&(Pexecutando->context));
 
 }
