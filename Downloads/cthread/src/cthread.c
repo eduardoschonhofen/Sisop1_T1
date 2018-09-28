@@ -95,13 +95,11 @@ void scheduler()
   {
 	desbloqueiaThread(ThreadAtual->tid);
 	printf("Entrei apos thread finalizar\n");
-  swapThread();
 	printf("Batata:%d\n",Pexecutando);
-  setcontext(&(Pexecutando->context));
-	}
-	ThreadAtual = Pexecutando;
+  }
 	printf("estoy aqui\n");
 	swapThread();
+	ThreadAtual = Pexecutando;
 	printf("%d\n",Pexecutando->tid);
 	setcontext(&(Pexecutando->context));
 
@@ -434,6 +432,7 @@ int csem_init(csem_t *sem, int count)
 {
 	sem = malloc(sizeof(csem_t));
 	sem->count = count;
+	sem->fila = (PFILA2)malloc(sizeof(FILA2));
 	return CreateFila2(sem->fila);
 }
 
@@ -473,7 +472,7 @@ int cwait(csem_t *sem)
 		else
 			AppendFila2(sem->fila,Thread);
 		ThreadAtual = NULL; // utilizado para informar ao escalonador que essa thread ainda nao terminou o processamento
-		scheduler(); //MUDAR PARA SWAPCONTEXT()?
+		swapcontext(&Pexecutando->context, &Tscheduler);
 	}
 }
 
@@ -495,7 +494,7 @@ int csignal(csem_t *sem)
 		DeleteAtIteratorFila2(sem->fila);
 		ThreadNew->state=PROCST_APTO;
 		ThreadAtual = NULL; // utilizado para informar ao escalonador que essa thread ainda nao terminou o processamento
-		scheduler();//MUDAR PARA SWAPCONTEXT()?
+		swapcontext(&Pexecutando->context, &Tscheduler);
 	}
 }
 
