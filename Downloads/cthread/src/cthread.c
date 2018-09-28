@@ -18,7 +18,7 @@ FILA2 static filaAlta;
 FILA2 static  filaMedia;
 FILA2 static  filaBaixa;
 FILA2 static  bloqueados;
-TCB_t static  executando;
+//TCB_t static  executando;
 
 
 PFILA2 static PfilaAlta=&filaAlta;
@@ -296,7 +296,7 @@ Retorno:
 ******************************************************************************/
 int cyield(void)
 {
-//	printf("Entrei no cyield");
+	printf("Entrei no cyield");
 	//inserePrioridade(Pexecutando);
 	ThreadAtual = NULL; // utilizado para informar ao escalonador que essa thread ainda nao terminou o processamento
 	// acho que o swap eh necessario para que fique salvo o contexto desse exato momento, para quando a thread voltar a ser executada
@@ -409,6 +409,7 @@ int csetprio(int tid, int prio)
 {
   Pexecutando->prio=prio;
 	swapcontext(&Pexecutando->context, &Tscheduler);
+return 0;
 
 }
 
@@ -440,7 +441,7 @@ int cjoin(int tid)
 	AppendFila2(Pjoined,novoBloqueio);						// necessaria para podermos verificar por qual tid a thread espera
 
 	ThreadAtual = NULL; // utilizado para informar ao escalonador que essa thread ainda nao terminou o processamento
-
+	Pexecutando = NULL;
 	swapcontext(&novoBloqueio->ThreadBloqueada->context, &Tscheduler); // TROCAR POR scheduler(); ?
 	return 0;
 }
@@ -455,10 +456,15 @@ Retorno:
 ******************************************************************************/
 int csem_init(csem_t *sem, int count)
 {
-	sem = malloc(sizeof(csem_t));
+	//sem = malloc(sizeof(csem_t));
+	//printf("start sem init");
 	sem->count = count;
+	printf("Valor do count do sem: %d \n", sem->count);
 	sem->fila = (PFILA2)malloc(sizeof(FILA2));
-	return CreateFila2(sem->fila);
+	if(sem->fila != NULL)
+		return CreateFila2(sem->fila);
+	else
+		return -1;
 }
 
 /******************************************************************************
@@ -470,35 +476,60 @@ Retorno:
 ******************************************************************************/
 int cwait(csem_t *sem)
 {
+	printf("cwait!\n");
 	sem->count = sem->count - 1;
+	printf("contou!\n");
 	if(sem->count < 0)
 	{
+		printf("Entrou para guardar na fila do sem\n");
+		printf("Valor do count do sem: %d \n", sem->count);
 		// thread bloqueada, entra na fila do semaforo
 		TCB_t *Thread;
-		getcontext(&Thread->context);
+		printf("Novo ponteiro de tcb!\n");
+		//getcontext(&Thread->context);
+		Thread = Pexecutando;
+		printf("Buscou o contexto\n");
 		Thread->state=PROCST_BLOQ;
+		printf("Setou estado Bloqueado!\n");
 		int endofqueue = 0;
 		// Posiciona a thread na fila por ordem de prioridade e então de idade
+		printf("Teste da fila vazia\n");
 		if(FirstFila2(sem->fila) == 0)
 		{
-			TCB_t *ThreadTemp = (TCB_t *)GetAtIteratorFila2(sem->fila); // EM CASO DE PROBLEMA, COMENTE ISSO FORA. era pra funcionar.
+			printf("Fila do sem nao vazia!\n");
+			TCB_t *ThreadTemp = (TCB_t *)GetAtIteratorFila2(((csem_t*)sem)->fila); // EM CASO DE PROBLEMA, COMENTE ISSO FORA. era pra funcionar.
 			while(Thread->prio <= ThreadTemp->prio && endofqueue == 0)
 			{
+				printf("Varrendo pelo lugar na fila!\n");
 				if(NextFila2(sem->fila) == NXTFILA_ENDQUEUE)
 					endofqueue = 1;
 				else
-					ThreadTemp = (TCB_t *)GetAtIteratorFila2(sem->fila);
+					ThreadTemp = (TCB_t *)GetAtIteratorFila2(((csem_t*)sem)->fila);
 			}
 			if(endofqueue == 0)
+			{
+				printf("Achou onde colocar a Thread\n");
 				InsertBeforeIteratorFila2(sem->fila, Thread);
+			}
 			else
+			{
+				printf("Thread no final da fila!\n");
 				AppendFila2(sem->fila,Thread);
+			}
 		}
 		else
-			AppendFila2(sem->fila,Thread);
+		{
+			printf("Fila do sem vazia!\n");
+			if(AppendFila2(sem->fila,Thread) != 0)
+				printf("ERRO NO APPEND!\n");;
+			printf("Fila do sem vazia!\n");
+		}
+		
 		ThreadAtual = NULL; // utilizado para informar ao escalonador que essa thread ainda nao terminou o processamento
-		swapcontext(&Pexecutando->context, &Tscheduler);
+		Pexecutando = NULL;
+		swapcontext(&Thread->context, &Tscheduler);
 	}
+	return 0;
 }
 
 /******************************************************************************
@@ -510,17 +541,33 @@ Retorno:
 ******************************************************************************/
 int csignal(csem_t *sem)
 {
+	printf("Csignal!\n");
 	sem->count = sem->count + 1;
+	if(sem->fila == NULL)
+		return -1;
 	if(sem->count >= 0)
 	{
+		printf("Libera um thread da fila!\n");
 		// Libera a thread de maior prioridade e idade da fila do semaforo para estado apto
-		FirstFila2(sem->fila);
-		TCB_t *ThreadNew = (TCB_t*)GetAtIteratorFila2(sem->fila);
-		DeleteAtIteratorFila2(sem->fila);
-		ThreadNew->state=PROCST_APTO;
-		ThreadAtual = NULL; // utilizado para informar ao escalonador que essa thread ainda nao terminou o processamento
-		swapcontext(&Pexecutando->context, &Tscheduler);
+		if(FirstFila2(sem->fila) == 0)
+		{
+			printf("Fila do sem nao vazia!\n");
+			TCB_t *ThreadNew;
+			ThreadNew = (TCB_t*)GetAtIteratorFila2(((csem_t*)sem)->fila);
+			if(ThreadNew != NULL)
+				printf("getatiterator funcionou!\n");
+			if(DeleteAtIteratorFila2(sem->fila) != 0)
+			{
+				printf("Problema ao deletar da fila do sem!\n");
+			}
+			printf("Pos delete!\n");
+			ThreadNew->state=PROCST_APTO;
+			ThreadAtual = NULL; // utilizado para informar ao escalonador que essa thread ainda nao terminou o processamento
+			inserePrioridade(ThreadNew);
+			swapcontext(&Pexecutando->context, &Tscheduler);
+		}
 	}
+	return 0;
 }
 
 /******************************************************************************
@@ -535,7 +582,7 @@ Retorno:
 int cidentify (char *name, int size)
 {
 
-
+	return 0;
 }
 
 //Verifica se alguma thread espera pelo final da thread com o tid fornecido
