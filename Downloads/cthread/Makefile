@@ -4,7 +4,7 @@ INC_DIR=./include
 BIN_DIR=./bin
 SRC_DIR=./src
 
-all: cthread clib cmain
+all: cthread clib
 
 cthread:
 	$(CC) -g -m32 -Wall -c $(SRC_DIR)/cthread.c -o $(BIN_DIR)/cthread.o -Wall
