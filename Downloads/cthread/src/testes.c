@@ -14,8 +14,9 @@ printf("Terceiro print da printa2\n");
 
 void printa1()
 {
-  ccreate((void*)printa2,NULL,1);
   printf("Primeiro print da printa1\n");
+  ccreate((void*)printa2,NULL,2);
+
 cyield();
 printf("Segundo print da printa1\n");
 
@@ -23,7 +24,8 @@ printf("Segundo print da printa1\n");
 int main()
 {
   printf("Entrei na main\n");
-  ccreate((void*)printa1,NULL,1);
+  ccreate((void*)printa1,NULL,2);
+  cyield();
 
   printf("Sai da main\n");
 

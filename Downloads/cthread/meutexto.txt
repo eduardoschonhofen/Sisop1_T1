@@ -1,0 +1,3 @@
+estou swapando por prioridade baixa
+VOLTOU MAINThread 1 is going to die!
+Thread 2 is going to die!
