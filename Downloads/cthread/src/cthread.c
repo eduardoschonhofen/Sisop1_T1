@@ -682,3 +682,10 @@ int desbloqueiaThread(int tid)
 	}
 	return -1;
 }
+
+int cidentify(char *name,int size)
+{
+char nomes[1000]="Eduardo Osielski Schonhofen 00274732\nFelipe Fernandes Bastos 00279793\nLucas Romagnoli 00194235";
+memcpy(name,nomes,size);
+return 1;
+}
