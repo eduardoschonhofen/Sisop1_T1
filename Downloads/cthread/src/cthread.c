@@ -543,7 +543,7 @@ int cwait(csem_t *sem)
 		else
 		{
 		//	//printf("Fila do sem vazia!\n");
-		//	if(AppendFila2(sem->fila,Thread) != 0)
+			if(AppendFila2(sem->fila,Thread) != 0);
 			//	//printf("ERRO NO APPEND!\n");;
 		//	//printf("Fila do sem vazia!\n");
 		}
