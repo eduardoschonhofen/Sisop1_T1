@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 
 #define STACKSIZE 8192
@@ -602,11 +603,7 @@ Retorno:
 	Quando executada corretamente: retorna 0 (zero)
 	Caso contrário, retorna um valor negativo.
 ******************************************************************************/
-int cidentify (char *name, int size)
-{
 
-	return 0;
-}
 
 //Verifica se alguma thread espera pelo final da thread com o tid fornecido
 // Retorna 0 se exite alguma, -1 se não exite;
