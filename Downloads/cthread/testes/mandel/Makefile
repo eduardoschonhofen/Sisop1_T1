@@ -16,4 +16,4 @@ clib:
 
 clean:
 	find $(BIN_DIR) -name ".o" | grep -v "support" | xargs rm -rf
-	rm -rf $(LIB_DIR)/.a $(LIB_DIR)/~ $(INC_DIR)/~ $(BIN_DIR)/~ $(SRC_DIR)/~ *~
+	rm -rf $(LIB_DIR)/*.a $(LIB_DIR)/*~ $(INC_DIR)/*~ $(BIN_DIR)/*~ $(SRC_DIR)/*~ *~
